@@ -2,7 +2,6 @@
   "name": "medcadence",
   "version": "1.0.0",
   "private": true,
-  "homepage": "https://ponchi-collab.github.io/medcadence",
   "dependencies": {
     "@supabase/supabase-js": "^2.99.1",
     "react": "^18.2.0",
