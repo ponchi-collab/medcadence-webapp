@@ -9,6 +9,7 @@ export function useMedicines(userId) {
   useEffect(() => {
     if (!userId) return;
     fetchMedicines();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   async function fetchMedicines() {

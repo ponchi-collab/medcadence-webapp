@@ -8,6 +8,7 @@ export function useLogs(userId, year, month) {
   useEffect(() => {
     if (!userId) return;
     fetchLogs();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, year, month]);
 
   async function fetchLogs() {
