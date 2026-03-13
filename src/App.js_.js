@@ -307,6 +307,7 @@ function MedApp({ user }) {
     return { year:n.getFullYear(), month:n.getMonth() };
   });
 
+  // ── Supabase hooks (replacing localStorage) ──
   const { medicines, addMedicine, updateMedicine, removeMedicine } = useMedicines(user.id);
   const { logs, toggle } = useLogs(user.id, historyMonth.year, historyMonth.month);
 
@@ -360,6 +361,7 @@ function MedApp({ user }) {
         <p style={{ margin:0, fontSize:"13px", color:"rgba(255,255,255,0.85)", fontWeight:"600" }}>
           {new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"})}
         </p>
+        {/* Sign out button */}
         <button onClick={signOut} style={{
           position:"absolute", top:"16px", right:"16px",
           padding:"6px 12px", borderRadius:"20px",
@@ -561,7 +563,7 @@ function MedApp({ user }) {
                           textTransform:"uppercase", whiteSpace:"nowrap",
                           position:"sticky", left:0, background:THEME.bgAlt, zIndex:2,
                           borderBottom:`2px solid ${THEME.border}`, borderRight:`2px solid ${THEME.border}`,
-                          minWidth:"110px",
+                          minWidth:"90px",
                         }}>Day / Date</th>
                         {medicines.map(med => {
                           const color = COLORS[med.color_idx % COLORS.length];
@@ -597,42 +599,34 @@ function MedApp({ user }) {
                         return (
                           <>
                             <tr key={dateStr} style={{ borderTop: di>0 ? `1px solid ${THEME.border}` : "none", background:rowBg }}>
-                              {/* ── DATE CELL with fixed-width edit button column ── */}
                               <td style={{
-                                padding:"6px 8px 6px 6px", whiteSpace:"nowrap",
+                                padding:"6px 8px 6px 12px", whiteSpace:"nowrap",
                                 position:"sticky", left:0, zIndex:1,
                                 background:stickyBg, borderRight:`2px solid ${THEME.border}`,
                               }}>
-                                <div style={{ display:"flex", alignItems:"center", gap:"5px" }}>
-                                  {/* Fixed-width container for edit button — keeps columns aligned */}
-                                  <div style={{ width:"24px", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                                    {!isFuture && (
-                                      <button onClick={() => setEditingDay(isEditing ? null : dateStr)} style={{
-                                        width:"22px", height:"22px", borderRadius:"6px",
-                                        background: isEditing ? THEME.accent : isToday ? "rgba(255,255,255,0.2)" : "rgba(0,119,182,0.1)",
-                                        border: isEditing ? `1.5px solid ${THEME.accent}` : isToday ? "1.5px solid rgba(255,255,255,0.4)" : `1.5px solid ${THEME.border}`,
-                                        color: isEditing?"#fff":isToday?"#fff":THEME.accent,
-                                        cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center",
-                                        fontSize:"12px", padding:0,
-                                      }}>{isEditing ? "✕" : "✎"}</button>
-                                    )}
-                                  </div>
-                                  {/* Day number badge */}
+                                <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
                                   <div style={{
-                                    width:"30px", height:"30px", borderRadius:"8px", flexShrink:0,
+                                    width:"30px", height:"30px", borderRadius:"8px",
                                     background: isToday ? "rgba(255,255,255,0.25)" : isSat ? THEME.satText : THEME.bgAlt,
                                     border:`2px solid ${isToday ? "rgba(255,255,255,0.4)" : isSat ? THEME.satText : THEME.border}`,
                                     display:"flex", alignItems:"center", justifyContent:"center",
                                   }}>
                                     <span style={{ fontSize:"12px", fontWeight:"900", color: isToday?"#fff":isSat?"#fff":THEME.text }}>{dayNum}</span>
                                   </div>
-                                  {/* Day name */}
                                   <span style={{ fontSize:"11px", fontWeight:"700", color: isToday?"rgba(255,255,255,0.9)":isSat?THEME.satText:THEME.textMid }}>
                                     {dayName}
                                   </span>
+                                  {!isFuture && (
+                                    <button onClick={() => setEditingDay(isEditing ? null : dateStr)} style={{
+                                      width:"22px", height:"22px", borderRadius:"6px",
+                                      background: isEditing ? THEME.accent : isToday ? "rgba(255,255,255,0.2)" : "rgba(0,119,182,0.1)",
+                                      border: isEditing ? `1.5px solid ${THEME.accent}` : isToday ? "1.5px solid rgba(255,255,255,0.4)" : `1.5px solid ${THEME.border}`,
+                                      color: isEditing?"#fff":isToday?"#fff":THEME.accent,
+                                      cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center",
+                                    }}>{isEditing ? "✕" : "✎"}</button>
+                                  )}
                                 </div>
                               </td>
-
                               {medicines.map(med => {
                                 const color  = COLORS[med.color_idx % COLORS.length];
                                 const slots  = getSlots(med);
@@ -663,7 +657,6 @@ function MedApp({ user }) {
                                 );
                               })}
                             </tr>
-
                             {isEditing && (
                               <tr key={dateStr+"-edit"} style={{ background:"#EFF8FF" }}>
                                 <td colSpan={medicines.length+1} style={{
