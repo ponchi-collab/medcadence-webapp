@@ -4,7 +4,6 @@ import LoginScreen from "./LoginScreen";
 import SignupScreen from "./SignupScreen";
 import { useMedicines } from "./useMedicines";
 import { useLogs } from "./useLogs";
-import SettingsTab from "./SettingsTab";
 
 /* ─── ICONS ──────────────────────────────────────────────────────────────── */
 const SunIcon = ({ size = 18 }) => (
@@ -335,10 +334,9 @@ function MedApp({ user }) {
   const isCurrentMonth = historyMonth.year===new Date().getFullYear() && historyMonth.month===new Date().getMonth();
 
   const NAV = [
-    { key:"today",    label:"Today",     Icon:TodayIcon,   emoji:"📅" },
-    { key:"history",  label:"History",   Icon:HistoryIcon, emoji:"📊" },
-    { key:"config",   label:"Medicines", Icon:SettingsIcon,emoji:"⚙️" },
-    { key:"settings", label:"Settings",  Icon:SettingsIcon,emoji:"🔔" },
+    { key:"today",   label:"Today",     Icon:TodayIcon,   emoji:"📅" },
+    { key:"history", label:"History",   Icon:HistoryIcon, emoji:"📊" },
+    { key:"config",  label:"Medicines", Icon:SettingsIcon,emoji:"⚙️" },
   ];
 
   return (
@@ -857,12 +855,6 @@ function MedApp({ user }) {
             </div>
           </div>
         )}
-
-        {/* SETTINGS */}
-        {view==="settings" && (
-          <SettingsTab user={user} medicines={medicines} />
-        )}
-
       </div>
     </div>
   );
