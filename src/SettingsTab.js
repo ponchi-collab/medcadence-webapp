@@ -24,6 +24,7 @@ export default function SettingsTab({ user, medicines }) {
 
   useEffect(() => {
     fetchSettings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [medicines]);
 
   async function fetchSettings() {
@@ -33,11 +34,10 @@ export default function SettingsTab({ user, medicines }) {
       .select("*")
       .eq("user_id", user.id);
 
-    // Build a map: settings[medId][slot] = { enabled, reminder_time }
     const map = {};
     medicines.forEach(med => {
       map[med.id] = {};
-      med.slots.forEach(slot => {
+      (med.slots || []).forEach(slot => {
         map[med.id][slot] = { enabled: false, reminder_time: defaultTime(slot) };
       });
     });
@@ -46,7 +46,7 @@ export default function SettingsTab({ user, medicines }) {
       if (map[row.medicine_id]) {
         map[row.medicine_id][row.slot] = {
           enabled: row.enabled,
-          reminder_time: row.reminder_time.slice(0, 5), // "HH:MM"
+          reminder_time: row.reminder_time.slice(0, 5),
         };
       }
     });
@@ -128,11 +128,11 @@ export default function SettingsTab({ user, medicines }) {
               onClick={subscribed ? disableNotifications : enableNotifications}
               disabled={loading}
               style={{
-                padding:"10px 20px", borderRadius:"12px", border:"none", cursor:"pointer",
+                padding:"10px 20px", borderRadius:"12px", cursor:"pointer",
                 background: subscribed ? "#FEF2F2" : THEME.accent,
                 color: subscribed ? "#EF4444" : "white",
                 fontSize:"13px", fontFamily:fontStack, fontWeight:"800",
-                border: subscribed ? "2px solid #FECACA" : "none",
+                border: subscribed ? "2px solid #FECACA" : "2px solid transparent",
                 opacity: loading ? 0.7 : 1,
               }}>
               {loading ? "Please wait..." : subscribed ? "Disable Notifications" : "Enable Notifications"}
@@ -163,7 +163,11 @@ export default function SettingsTab({ user, medicines }) {
               }}>
                 <div style={{ fontSize:"15px", fontWeight:"800", color:THEME.text, marginBottom:"12px" }}>
                   💊 {med.name}
-                  {med.dose && <span style={{ fontSize:"12px", color:THEME.textLight, fontWeight:"600", marginLeft:"6px" }}>{med.dose}</span>}
+                  {med.dose && (
+                    <span style={{ fontSize:"12px", color:THEME.textLight, fontWeight:"600", marginLeft:"6px" }}>
+                      {med.dose}
+                    </span>
+                  )}
                 </div>
 
                 <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
@@ -175,13 +179,12 @@ export default function SettingsTab({ user, medicines }) {
                         display:"flex", alignItems:"center", gap:"10px",
                         background: s.enabled ? THEME.bgAlt : "#F8FAFC",
                         borderRadius:"12px", padding:"10px 12px",
-                        border:`1.5px solid ${s.enabled ? THEME.border : "#E2E8F0"}`,
+                        border: s.enabled ? `1.5px solid ${THEME.border}` : "1.5px solid #E2E8F0",
                       }}>
                         <span style={{ fontSize:"18px" }}>{slotDef?.emoji}</span>
                         <span style={{ fontSize:"13px", fontWeight:"700", color:THEME.text, flex:1 }}>
                           {slotDef?.label}
                         </span>
-                        {/* Time picker */}
                         <input
                           type="time"
                           value={s.reminder_time}
@@ -196,7 +199,6 @@ export default function SettingsTab({ user, medicines }) {
                             cursor: s.enabled ? "pointer" : "default",
                           }}
                         />
-                        {/* Toggle */}
                         <div
                           onClick={() => updateSetting(med.id, slot, "enabled", !s.enabled)}
                           style={{
@@ -221,13 +223,12 @@ export default function SettingsTab({ user, medicines }) {
             ))}
           </div>
 
-          {/* Save button */}
           <button onClick={saveSettings} disabled={saving} style={{
             width:"100%", marginTop:"16px", padding:"14px",
             borderRadius:"14px", border:"none", cursor:"pointer",
             background: THEME.accent, color:"white",
             fontSize:"15px", fontFamily:fontStack, fontWeight:"800",
-            boxShadow:`0 4px 16px rgba(0,119,182,0.35)`,
+            boxShadow:"0 4px 16px rgba(0,119,182,0.35)",
             opacity: saving ? 0.7 : 1,
           }}>
             {saving ? "Saving..." : savedMsg ? "✅ Saved!" : "Save Reminder Times"}
