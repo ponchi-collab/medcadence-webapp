@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from "./AuthProvider";
 import LoginScreen from "./LoginScreen";
 import SignupScreen from "./SignupScreen";
 import PendingScreen from "./PendingScreen";
+import ResetPasswordScreen from "./ResetPasswordScreen";
 import { useMedicines } from "./useMedicines";
 import { useLogs } from "./useLogs";
 import SettingsTab from "./SettingsTab";
@@ -455,7 +456,7 @@ function UserRow({ user, onStatus, onRole, formatDate, statusColor, fontStack })
 
 /* ─── AUTH WRAPPER ───────────────────────────────────────────────────────── */
 function AppContent() {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, isResettingPassword, setIsResettingPassword } = useAuth();
   const [showSignup, setShowSignup] = useState(false);
 
   if (loading) return (
@@ -468,6 +469,11 @@ function AppContent() {
       <p>🌊 Loading...</p>
     </div>
   );
+
+  // Show reset password screen when user clicks email link
+  if (isResettingPassword) {
+    return <ResetPasswordScreen onDone={() => setIsResettingPassword(false)} />;
+  }
 
   if (!user) {
     return showSignup
