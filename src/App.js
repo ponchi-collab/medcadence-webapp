@@ -322,7 +322,6 @@ function AdminTab() {
 
   const pending  = users.filter(u => u.status === "pending");
   const approved = users.filter(u => u.status === "approved");
-  const rejected = users.filter(u => u.status === "rejected");
 
   return (
     <div style={{ fontFamily:fontStack }}>
