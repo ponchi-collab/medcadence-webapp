@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AuthProvider, useAuth } from "./AuthProvider";
 import LoginScreen from "./LoginScreen";
 import SignupScreen from "./SignupScreen";
+import PendingScreen from "./PendingScreen";
 import { useMedicines } from "./useMedicines";
 import { useLogs } from "./useLogs";
 import SettingsTab from "./SettingsTab";
@@ -268,9 +269,194 @@ function MedicineForm({ initial, onSave, onCancel }) {
   );
 }
 
+/* ─── ADMIN TAB ──────────────────────────────────────────────────────────── */
+function AdminTab() {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const fontStack = "'Nunito','Trebuchet MS',sans-serif";
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  async function fetchUsers() {
+    const { supabase } = await import("./supabaseClient");
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .order("created_at", { ascending: false });
+    setUsers(data || []);
+    setLoading(false);
+  }
+
+  async function updateStatus(id, status) {
+    const { supabase } = await import("./supabaseClient");
+    await supabase.from("profiles").update({ status }).eq("id", id);
+    setUsers(prev => prev.map(u => u.id === id ? { ...u, status } : u));
+  }
+
+  async function updateRole(id, role) {
+    const { supabase } = await import("./supabaseClient");
+    await supabase.from("profiles").update({ role }).eq("id", id);
+    setUsers(prev => prev.map(u => u.id === id ? { ...u, role } : u));
+  }
+
+  function formatDate(ts) {
+    if (!ts) return "Never";
+    return new Date(ts).toLocaleString("en-US", {
+      month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"
+    });
+  }
+
+  function statusColor(status) {
+    if (status === "approved") return { bg:"#DCFCE7", color:"#166534", border:"#86EFAC" };
+    if (status === "pending")  return { bg:"#FEF9C3", color:"#854D0E", border:"#FDE047" };
+    return { bg:"#FEE2E2", color:"#991B1B", border:"#FCA5A5" };
+  }
+
+  if (loading) return (
+    <div style={{ textAlign:"center", padding:"40px", color:THEME.textLight, fontFamily:fontStack }}>
+      Loading users...
+    </div>
+  );
+
+  const pending  = users.filter(u => u.status === "pending");
+  const approved = users.filter(u => u.status === "approved");
+  const rejected = users.filter(u => u.status === "rejected");
+
+  return (
+    <div style={{ fontFamily:fontStack }}>
+      {/* Header stats */}
+      <div style={{ display:"flex", gap:"10px", marginBottom:"16px" }}>
+        {[
+          { label:"Total", count:users.length, bg:"#EFF6FF", color:"#1D4ED8" },
+          { label:"Pending", count:pending.length, bg:"#FEF9C3", color:"#854D0E" },
+          { label:"Approved", count:approved.length, bg:"#DCFCE7", color:"#166534" },
+        ].map(stat => (
+          <div key={stat.label} style={{
+            flex:1, textAlign:"center", padding:"12px 8px",
+            background:stat.bg, borderRadius:"14px",
+            border:`2px solid ${stat.color}22`,
+          }}>
+            <div style={{ fontSize:"22px", fontWeight:"900", color:stat.color }}>{stat.count}</div>
+            <div style={{ fontSize:"11px", fontWeight:"700", color:stat.color }}>{stat.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Pending users first */}
+      {pending.length > 0 && (
+        <div style={{
+          background:"#FEF9C3", borderRadius:"16px", padding:"12px 14px",
+          border:"2px solid #FDE047", marginBottom:"12px",
+        }}>
+          <div style={{ fontSize:"13px", fontWeight:"800", color:"#854D0E", marginBottom:"10px" }}>
+            ⏳ Pending Approval ({pending.length})
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+            {pending.map(u => (
+              <UserRow key={u.id} user={u} onStatus={updateStatus} onRole={updateRole}
+                formatDate={formatDate} statusColor={statusColor} fontStack={fontStack}/>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* All users */}
+      <div style={{ fontSize:"13px", fontWeight:"800", color:THEME.textMid, marginBottom:"10px" }}>
+        👥 All Users ({users.length})
+      </div>
+      <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+        {users.map(u => (
+          <UserRow key={u.id} user={u} onStatus={updateStatus} onRole={updateRole}
+            formatDate={formatDate} statusColor={statusColor} fontStack={fontStack}/>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function UserRow({ user, onStatus, onRole, formatDate, statusColor, fontStack }) {
+  const sc = statusColor(user.status);
+  return (
+    <div style={{
+      background:"rgba(255,255,255,0.92)", borderRadius:"14px",
+      border:`2px solid ${THEME.border}`, padding:"12px 14px",
+      backdropFilter:"blur(4px)",
+    }}>
+      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:"8px" }}>
+        <div style={{ flex:1, minWidth:0 }}>
+          <div style={{ fontSize:"13px", fontWeight:"800", color:THEME.text,
+            overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+            {user.email}
+          </div>
+          <div style={{ fontSize:"11px", color:THEME.textLight, fontWeight:"600", marginTop:"2px" }}>
+            Joined: {formatDate(user.created_at)}
+          </div>
+          <div style={{ fontSize:"11px", color:THEME.textLight, fontWeight:"600" }}>
+            Last seen: {formatDate(user.last_seen)}
+          </div>
+          <div style={{ display:"flex", gap:"6px", marginTop:"6px", flexWrap:"wrap" }}>
+            {/* Status badge */}
+            <span style={{
+              padding:"2px 10px", borderRadius:"20px", fontSize:"11px", fontWeight:"800",
+              background:sc.bg, color:sc.color, border:`1.5px solid ${sc.border}`,
+            }}>{user.status}</span>
+            {/* Role badge */}
+            <span style={{
+              padding:"2px 10px", borderRadius:"20px", fontSize:"11px", fontWeight:"800",
+              background: user.role==="admin" ? "#EDE9FE" : "#F0F9FF",
+              color: user.role==="admin" ? "#6D28D9" : THEME.accent,
+              border: user.role==="admin" ? "1.5px solid #C4B5FD" : `1.5px solid ${THEME.border}`,
+            }}>{user.role==="admin" ? "👑 admin" : "user"}</span>
+          </div>
+        </div>
+        {/* Action buttons */}
+        <div style={{ display:"flex", flexDirection:"column", gap:"5px", flexShrink:0 }}>
+          {user.status !== "approved" && (
+            <button onClick={() => onStatus(user.id, "approved")} style={{
+              padding:"5px 10px", borderRadius:"8px", border:"none", cursor:"pointer",
+              background:"#DCFCE7", color:"#166534", fontSize:"11px", fontWeight:"800",
+              fontFamily:fontStack,
+            }}>✅ Approve</button>
+          )}
+          {user.status !== "rejected" && (
+            <button onClick={() => onStatus(user.id, "rejected")} style={{
+              padding:"5px 10px", borderRadius:"8px", border:"none", cursor:"pointer",
+              background:"#FEE2E2", color:"#991B1B", fontSize:"11px", fontWeight:"800",
+              fontFamily:fontStack,
+            }}>❌ Reject</button>
+          )}
+          {user.status !== "pending" && (
+            <button onClick={() => onStatus(user.id, "pending")} style={{
+              padding:"5px 10px", borderRadius:"8px", border:"none", cursor:"pointer",
+              background:"#FEF9C3", color:"#854D0E", fontSize:"11px", fontWeight:"800",
+              fontFamily:fontStack,
+            }}>⏳ Suspend</button>
+          )}
+          {user.role !== "admin" && (
+            <button onClick={() => onRole(user.id, "admin")} style={{
+              padding:"5px 10px", borderRadius:"8px", border:"none", cursor:"pointer",
+              background:"#EDE9FE", color:"#6D28D9", fontSize:"11px", fontWeight:"800",
+              fontFamily:fontStack,
+            }}>👑 Make Admin</button>
+          )}
+          {user.role === "admin" && (
+            <button onClick={() => onRole(user.id, "user")} style={{
+              padding:"5px 10px", borderRadius:"8px", border:"none", cursor:"pointer",
+              background:"#F0F9FF", color:THEME.accent, fontSize:"11px", fontWeight:"800",
+              fontFamily:fontStack,
+            }}>Remove Admin</button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── AUTH WRAPPER ───────────────────────────────────────────────────────── */
 function AppContent() {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const [showSignup, setShowSignup] = useState(false);
 
   if (loading) return (
@@ -290,11 +476,14 @@ function AppContent() {
       : <LoginScreen  onSwitch={() => setShowSignup(true)}/>;
   }
 
-  return <MedApp user={user}/>;
+  if (profile?.status === "pending") return <PendingScreen />;
+  if (profile?.status === "rejected") return <PendingScreen rejected />;
+
+  return <MedApp user={user} profile={profile}/>;
 }
 
 /* ─── MAIN APP ───────────────────────────────────────────────────────────── */
-function MedApp({ user }) {
+function MedApp({ user, profile }) {
   const { signOut } = useAuth();
   const [view,      setView]      = useState("today");
   const [showAdd,   setShowAdd]   = useState(false);
@@ -339,6 +528,7 @@ function MedApp({ user }) {
     { key:"history",  label:"History",   Icon:HistoryIcon, emoji:"📊" },
     { key:"config",   label:"Medicines", Icon:SettingsIcon,emoji:"⚙️" },
     { key:"settings", label:"Settings",  Icon:SettingsIcon,emoji:"🔔" },
+    ...(profile?.role === "admin" ? [{ key:"admin", label:"Admin", Icon:SettingsIcon, emoji:"👑" }] : []),
   ];
 
   return (
@@ -861,6 +1051,11 @@ function MedApp({ user }) {
         {/* SETTINGS */}
         {view==="settings" && (
           <SettingsTab user={user} medicines={medicines} />
+        )}
+
+        {/* ADMIN */}
+        {view==="admin" && profile?.role === "admin" && (
+          <AdminTab />
         )}
 
       </div>

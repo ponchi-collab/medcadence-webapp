@@ -1,44 +1,60 @@
-
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "./supabaseClient";
 
-// Create a context to share auth state across the whole app
 const AuthContext = createContext({});
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if there's already a logged-in session when app loads
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      setLoading(false);
+      if (session?.user) fetchProfile(session.user.id);
+      else setLoading(false);
     });
 
-    // Listen for login/logout events and update user state
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (_event, session) => {
         setUser(session?.user ?? null);
+        if (session?.user) fetchProfile(session.user.id);
+        else { setProfile(null); setLoading(false); }
       }
     );
 
-    // Cleanup listener when component unmounts
     return () => subscription.unsubscribe();
   }, []);
 
+  async function fetchProfile(userId) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+    setProfile(data);
+
+    // Update last_seen
+    await supabase
+      .from("profiles")
+      .update({ last_seen: new Date().toISOString() })
+      .eq("id", userId);
+
+    setLoading(false);
+  }
+
   const signOut = async () => {
     await supabase.auth.signOut();
+    setProfile(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signOut }}>
+    <AuthContext.Provider value={{ user, profile, loading, signOut }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-// Custom hook so any component can easily access auth state
 export function useAuth() {
   return useContext(AuthContext);
 }
