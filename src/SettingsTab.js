@@ -83,6 +83,7 @@ export default function SettingsTab({ user, medicines }) {
             slot,
             enabled: s.enabled,
             reminder_time: s.reminder_time + ":00",
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           });
         }
       });
