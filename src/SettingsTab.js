@@ -23,7 +23,7 @@ function generateTimeOptions() {
       const hour = String(h).padStart(2, "0");
       const min = String(m).padStart(2, "0");
       const value = `${hour}:${min}`;
-      const display = `${h === 0 ? 12 : h > 12 ? h - 12 : h}:${min} ${h < 12 ? "AM" : "PM"}`;
+      const display = `${hour}:${min}`;
       times.push({ value, display });
     }
   }
