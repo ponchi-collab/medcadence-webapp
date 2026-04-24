@@ -36,20 +36,24 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function fetchProfile(userId) {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
-    setProfile(data);
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+      setProfile(data);
 
-    // Update last_seen
-    await supabase
-      .from("profiles")
-      .update({ last_seen: new Date().toISOString() })
-      .eq("id", userId);
-
-    setLoading(false);
+      // Update last_seen
+      await supabase
+        .from("profiles")
+        .update({ last_seen: new Date().toISOString() })
+        .eq("id", userId);
+    } catch (err) {
+      console.error("fetchProfile error:", err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   const signOut = async () => {
