@@ -23,11 +23,13 @@ function getCurrentTimeInTimezone(timezone: string): string {
     const parts = formatter.formatToParts(now);
     const hour = parts.find(p => p.type === "hour")?.value || "00";
     const minute = parts.find(p => p.type === "minute")?.value || "00";
-    return `${hour.padStart(2,"0")}:${minute.padStart(2,"0")}`;
+    // Round down to nearest 15 minutes
+    const roundedMinute = Math.floor(parseInt(minute) / 15) * 15;
+    return `${hour.padStart(2,"0")}:${String(roundedMinute).padStart(2,"0")}`;
   } catch {
-    // Fallback to UTC if timezone is invalid
     const now = new Date();
-    return `${String(now.getUTCHours()).padStart(2,"0")}:${String(now.getUTCMinutes()).padStart(2,"0")}`;
+    const roundedMinute = Math.floor(now.getUTCMinutes() / 15) * 15;
+    return `${String(now.getUTCHours()).padStart(2,"0")}:${String(roundedMinute).padStart(2,"0")}`;
   }
 }
 
@@ -49,11 +51,11 @@ Deno.serve(async () => {
       return new Response(JSON.stringify({ sent: 0 }), { status: 200 });
     }
 
-    // Filter settings where current local time matches reminder time
+    // Filter settings where current local 15-min slot matches reminder time
     const settings = allSettings.filter((s: any) => {
       const timezone = s.timezone || "UTC";
       const localTime = getCurrentTimeInTimezone(timezone);
-      const reminderTime = s.reminder_time.slice(0, 5); // "HH:MM"
+      const reminderTime = s.reminder_time.slice(0, 5);
       return localTime === reminderTime;
     });
 
